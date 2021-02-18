@@ -1,22 +1,24 @@
 ## tuna.sh
-Script shows the names of organizations with which the PROCESS has established a connection.
+The script shows the names of organizations with which the PROCESS has the maximum number of connections.
+### Info
+The `ss` utility was used to examine local connections, the names of the host organizations were resolved using the `whois` utility.
 ### Usage
 `$ ./tuna.sh [OPTIONS] [PROCESS]`
 ### Examples:
 ```
 $ ./tuna.sh -m 8 -f connected chrome
-$ ./tuna.sh --filter ALL --max_count 5 qbittorrent
+$ ./tuna.sh --filter established --max_count 5 qbittorrent
 ```
 ### Available parameters:
 ```
-PROCESS             the name or ID of process being processed.
+PROCESS               the name or ID of process being processed.
 
--m, --max-count NUM maximum NUM of processed connections.
--f, --filter STATE  use a filter for proccessed connections STATE.
+-m, --max-count NUM   maximum NUM of processed unique IP addresses.
+-f, --filter STATE    use a filter for proccessed connections STATE.
 
--h, --help\t\tprint this help message
+-h, --help            print this help message
 ```
-### Available all standard TCP STATEs:
+### Available all standard TCP states:
 ```
 established
 syn-sent
@@ -30,7 +32,7 @@ last-ack
 listening
 closing
 ```
-### Other available STATE identifiers:
+### Other available state identifiers:
 ```
 all           all of the above states.
 connected     all the states with the exception of listen and closed
