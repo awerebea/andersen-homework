@@ -117,4 +117,18 @@ elif [ "$#" -gt 1 ]; then
   done
 fi
 
-sudo ss -tunap state "$state" | awk "/$proc/ {print \$6}" | cut -d: -f1 | sort | uniq -c | sort | tail -n"${num}" | grep -oP '(\d+\.){3}\d+' | while read IP ; do whois $IP | awk -F':' '/^Organization/ {print $2}' ; done
+ip_table=()
+while IFS= read -r line; do
+    ip_table+=( "$line" )
+done < <( sudo ss -tunap state $state | awk "/$proc/ {print \$6}" | \
+  grep -E '.*[0-9]{1,4}(\.|\:).*' | sed 's/\(.*\)\:.*/\1/' | tr -d '[]' | \
+  sort | uniq -c | sort -r | head -n$num )
+
+for line in "${ip_table[@]}"; do
+  connection_count=$(echo $line | cut -f1 -d' ')
+  IP=$(echo $line | cut -f2 -d' ')
+  organization=$(whois $IP | \
+    awk -F':' '/^[Oo]rganization|^[Oo]rganisation|^[Rr]ole/ {print $2}' | \
+    awk '{$1=$1};1' | tail -n1)
+  echo $organization "($connection_count connection[s])"
+done
