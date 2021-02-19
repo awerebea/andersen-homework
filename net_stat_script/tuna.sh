@@ -133,7 +133,7 @@ done < <( ss -tunap state $state )
 # filter raw table by "process NAME" OR pid=PID
 filtered_table=()
 for line in "${raw_table[@]}"; do
-  process=$(echo $line | awk "{print \$7}" | awk "/$proc|pid=$proc/")
+  process=$(echo $line | awk "{print \$7}" | awk "/\".*$proc.*\"|pid=.*$proc/")
   IP=$(echo $line | awk "!/*/ {print \$6}")
   if [[ ! -z $process && ! -z $IP ]]; then
     filtered_table+=( "$line" )
