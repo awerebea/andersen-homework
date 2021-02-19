@@ -92,7 +92,7 @@ elif [ "$#" -gt 1 ]; then
           num="${args[${ind}]}"
           ((ind++));;
         -f|--filter)
-          if [[ " ${states[@]} " =~ " ${args[${ind}]} " ]]; then
+          if [[ " ${states[@]} " =~ " ${args[${ind}],,} " ]]; then
             state="${args[${ind}]}"
           else
             echo "$error"
@@ -125,7 +125,7 @@ fi
 raw_table=()
 while IFS= read -r line; do
   raw_table+=( "$line" )
-done < <( sudo ss -tunap state $state )
+done < <( ss -tunap state $state )
 
 # DEBUG print
 # printf '%s\n' "${raw_table[@]}"
@@ -133,8 +133,9 @@ done < <( sudo ss -tunap state $state )
 # filter raw table by "process NAME" OR pid=PID
 filtered_table=()
 for line in "${raw_table[@]}"; do
-  process=$(echo $line | awk "{print \$7}" | awk "/\"$proc\"|pid=$proc/")
-  if [ ! -z $process ]; then
+  process=$(echo $line | awk "{print \$7}" | awk "/$proc|pid=$proc/")
+  IP=$(echo $line | awk "!/*/ {print \$6}")
+  if [[ ! -z $process && ! -z $IP ]]; then
     filtered_table+=( "$line" )
   fi
 done
