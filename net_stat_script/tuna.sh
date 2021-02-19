@@ -2,18 +2,20 @@
 
 # define "help" message
 help=$'usage: ./tuna.sh [OPTIONS] [PROCESS]
-Show the names of organizations with which the PROCESS has established a connection.
+Show the names of organizations with which the PROCESS has established
+a connection.
 Examples:
 ./tuna.sh -m 8 -f connected chrome
 ./tuna.sh --filter ALL --max_count 5 qbittorrent
 
-PROCESS:\tname or ID of PROCESS being processed. Default "firefox"
+PROCESS:                name or ID of PROCESS being processed. Default "firefox"
 
 OPTIONS:
-  -m, --max-count NUM\tmaximum NUM of processed connections. Default 5
-  -f, --filter STATE\tuse a filter for proccessed connections STATE. Default "all"
+  -m, --max-count NUM   maximum NUM of processed connections. Default 5
+  -f, --filter STATE    use a filter for proccessed connections STATE.
+                        Default "all"
 
-  -h, --help\t\tprint this help message
+  -h, --help            print this help message
 
 Available all standard TCP STATEs:
   established
@@ -29,11 +31,12 @@ Available all standard TCP STATEs:
   closing
 
 Other available STATE identifiers:
-  all\t\tall of the above states.
-  connected\tall the states with the exception of listen and closed
-  synchronized\tall of the connected states with the exception of syn-sent
-  bucket\tstates which are maintained as minisockets, for example time-wait and syn-recv
-  big\t\topposite to bucket state'
+  all               all of the above states.
+  connected         all the states with the exception of listen and closed
+  synchronized      all of the connected states with the exception of syn-sent
+  bucket            states which are maintained as minisockets,
+                    for example time-wait and syn-recv
+  big               opposite to bucket state'
 
 # difine default parameters
 # acceptable OPTIONS
@@ -59,6 +62,7 @@ error="Syntax error. Type './tuna.sh --help' to see more info"
 # get number of elements
 ELEMENTS=${#args[@]}
 
+# parse input parameters
 # set default values to avoid errors if no arguments passed
 proc=${def_proc}
 num=${def_num}
@@ -117,13 +121,39 @@ elif [ "$#" -gt 1 ]; then
   done
 fi
 
+# create table with raw 'ss' output
+raw_table=()
+while IFS= read -r line; do
+  raw_table+=( "$line" )
+done < <( sudo ss -tunap state $state )
+
+# DEBUG print
+# printf '%s\n' "${raw_table[@]}"
+
+# filter raw table by "process NAME" OR pid=PID
+filtered_table=()
+for line in "${raw_table[@]}"; do
+  process=$(echo $line | awk "{print \$7}" | awk "/\"$proc\"|pid=$proc/")
+  if [ ! -z $process ]; then
+    filtered_table+=( "$line" )
+  fi
+done
+
+# DEBUG print
+# printf '%s\n' "${filtered_table[@]}"
+
+# create table of Peer ip addresses with connections count
 ip_table=()
 while IFS= read -r line; do
-    ip_table+=( "$line" )
-done < <( sudo ss -tunap state $state | awk "/$proc/ {print \$6}" | \
-  grep -E '.*[0-9]{1,4}(\.|\:).*' | sed 's/\(.*\)\:.*/\1/' | tr -d '[]' | \
-  sort | uniq -c | sort -r | head -n$num )
+  ip_table+=( "$line" )
+done < <( printf '%s\n' "${filtered_table[@]}" | awk "{print \$6}" | \
+  grep -E '.*[0-9]{1,4}(\.|\:).*' | sed 's/\(.*\)\:.*/\1/' | \
+  tr -d '[]' | sort | uniq -c | sort -r | head -n$num )
 
+# DEBUG print
+# printf '%s\n' "${ip_table[@]}"
+
+# final output
 for line in "${ip_table[@]}"; do
   connection_count=$(echo $line | cut -f1 -d' ')
   IP=$(echo $line | cut -f2 -d' ')
