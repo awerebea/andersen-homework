@@ -4,14 +4,9 @@
 - hosts: servers
   become: yes
   tasks:
-    - name: Ensure `nginx` is installed
+    - name: Ensure `nginx`, `fonts-noto-color-emoji`, `openssl` are installed
       apt:
-        name: nginx
-        state: present
-
-    - name: Ensure `fonts-noto-color-emoji` is installed
-      apt:
-        name: fonts-noto-color-emoji
+        name: ['nginx', 'fonts-noto-color-emoji', 'openssl']
         state: present
 
     - name: Check if `/etc/ssl/selfsigned_sert` directory exists
@@ -27,11 +22,6 @@
         recurse: yes
       when: ssl_certificate_dir_exists_check is defined and
             ssl_certificate_dir_exists_check.stat.exists == false
-
-    - name: Ensure `openssl` is installed
-      apt:
-        name: openssl
-        state: present
 
     - name: Check ssl sertificate and private ley exists
       stat:
