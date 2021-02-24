@@ -6,13 +6,13 @@ Download the DATABASE if the file does not exist in the path.
 Show the value of the minimum volatility of the euro for the selected MONTH for
 years in the range starting from YEAR.
 Examples:
-./volatility.sh -m 03 -2015 quotes.json
+./volatility.sh -m 3 -y 2015 quotes.json
 ./volatility.sh --year 2017 --month 11 \'../quotes.json\'
 
 DATABASE: relative path of DATABASE file being processed. Default "quotes.json"
 
 OPTIONS:
-  -m, --month MM    month in MM format. Default 03
+  -m, --month NUM   month in num [0]1-12 format. Default 3
   -y, --year NUM    year in YYYY format. Default 2015
 
   -h, --help        print this help message'
@@ -55,11 +55,11 @@ elif [ "$#" -gt 1 ]; then
     # previous arg is option identifer
       case "${args[${ind} - 1]}" in
         -m|--month)
-          if [[ ${args[${ind}]} =~ ^[0-9]+$ && ${#args[${ind}]} -eq 2 ]];
-          then
-            month="${args[${ind}]}"
+          if [[ ${args[${ind}]} =~ ^[0-9]+$ ]] && \
+            [ "${args[${ind}]}" -ge 1 ] && [ "${args[${ind}]}" -le 12 ]; then
+            month=$(echo "${args[${ind}]}" | awk '{printf "%02d\n", $0}')
           else
-            echo "$error"
+            echo "Date error: month ${args[${ind}]}"
             exit 1
           fi
           ((ind++));;
@@ -159,7 +159,7 @@ for year in "${years[@]}"; do
     done < <( printf '%s\n' "${stats[${year}]}" | awk '{print $2}' )
     mean[$year]=$(echo "scale=4; ${mean[$year]} / $count" | bc)
     # DEBUG print
-    printf "$year.$month  mean %s\n" ${mean[$year]}
+    # printf "$year.$month  mean %s\n" ${mean[$year]}
   fi
 done
 
@@ -214,5 +214,5 @@ done
 
 # final output
 printf "The %s with min volatility (%s) was in %s\n" \
-  $(LC_ALL=us_EN.utf8 date -d "1900-$month-01" +"%B") \
-  $min_volatility $min_volatility_year
+  $(LC_ALL=us_EN.utf8 date -d "$month/01" +"%B") \
+  $(echo $min_volatility | awk '{printf "%.4f\n", $0}') $min_volatility_year
