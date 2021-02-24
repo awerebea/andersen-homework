@@ -7,7 +7,7 @@ The `ss` utility was used to examine local connections, the names of the host or
 ### Examples:
 ```
 $ ./tuna.sh -m 8 -f connected chrome
-$ ./tuna.sh --filter established --max_count 5 qbittorrent
+$ ./tuna.sh --filter established --max-count 5 qbittorrent
 ```
 ### Available parameters:
 ```

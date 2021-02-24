@@ -6,7 +6,7 @@ Show the names of organizations with which the PROCESS has established
 a connection.
 Examples:
 ./tuna.sh -m 8 -f connected chrome
-./tuna.sh --filter ALL --max_count 5 qbittorrent
+./tuna.sh --filter ALL --max-count 5 qbittorrent
 
 PROCESS:                name or ID of PROCESS being processed. Default "firefox"
 
