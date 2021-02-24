@@ -146,7 +146,7 @@ do
 done;) | grep ${year}${month} | sort
 }
 
-# calculate min, mean and max values for selected month of each year
+# calculate mean values for selected month of each year
 for year in "${years[@]}"; do
   stats[$year]=$(filter_month)
   mean[$year]=0
@@ -154,35 +154,49 @@ for year in "${years[@]}"; do
   if [[ ${#stats[$year]} -gt 0 ]]; then
     # calculate min, mean and max values in month
     while IFS= read -r line; do
-      if [ $count -eq 0 ]; then
-        min[$year]=$line
-        max[$year]=$line
-      else
-        if (( $(echo "$line < ${min[$year]}" | bc) )); then
-          min[$year]=$(echo "$line" | awk '{printf "%.4f", $0}')
-        fi
-        if (( $(echo "$line > ${max[$year]}" | bc) )); then
-          max[$year]=$(echo "$line" | awk '{printf "%.4f", $0}')
-        fi
-      fi
       mean[$year]=$(echo ${mean[$year]} + $line | bc)
       ((count++))
     done < <( printf '%s\n' "${stats[${year}]}" | awk '{print $2}' )
     mean[$year]=$(echo "scale=4; ${mean[$year]} / $count" | bc)
     # DEBUG print
-    # printf "$year.$month  min %s\tmean %s\tmax %s\n" \
-    #   ${min[$year]} ${mean[$year]} ${max[$year]}
+    printf "$year.$month  mean %s\n" ${mean[$year]}
   fi
 done
 
-# calculate volatility for selected month of each year, and get min of them
+# calculate standard deviation
+for year in "${years[@]}"; do
+  std_deviation[$year]=0
+  count=0
+  if [[ ${#stats[$year]} -gt 0 ]]; then
+    # calculate min, mean and max values in month
+    while IFS= read -r line; do
+      sq_deviation_day=$(echo "scale=4; $line - ${mean[$year]}" | bc)
+      # DEBUG print
+      # printf "$year.$month  day value $line  mean ${mean[$year]}  \
+      #   deviation day $sq_deviation_day\n"
+      std_deviation[$year]=$(echo "scale=4; ${std_deviation[$year]} + \
+        $sq_deviation_day ^ 2" | bc)
+      ((count++))
+    done < <( printf '%s\n' "${stats[${year}]}" | awk '{print $2}' )
+    # DEBUG print
+    # printf "$year.$month count $count std deviation $year \
+    #   ${std_deviation[$year]}\n"
+    std_deviation[$year]=$(echo "scale=4; sqrt ( ${std_deviation[$year]} / \
+      $count )" | bc)
+    # DEBUG print
+    # printf "$year.$month  standart deviation %s\n" ${std_deviation[$year]}
+  fi
+done
+
+# calculate historical volatility for selected month of each year
+# and get min of them
 min_volatility=0
 min_volatility_year=0
 count=0
 for year in "${years[@]}"; do
   if [[ ${#stats[$year]} -gt 0 ]]; then
-    volatility[$year]=$(echo "scale=4; ((${mean[$year]} - ${min[$year]}) + \
-      (${max[$year]} - ${mean[$year]})) / 2" | bc | awk '{printf "%.4f", $0}')
+    volatility[$year]=$(echo "scale=4; sqrt ( 252 / 12 ) * \
+      ${std_deviation[$year]}" | bc)
     if [ $count -eq 0 ]; then
       min_volatility=${volatility[$year]}
       min_volatility_year=$year
@@ -197,9 +211,6 @@ for year in "${years[@]}"; do
   fi
   ((count++))
 done
-
-# DEBUG print
-# printf "min_volatility %s in year %s\n" $min_volatility $min_volatility_year
 
 # final output
 printf "The %s with min volatility (%s) was in %s\n" \
