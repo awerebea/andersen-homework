@@ -1,14 +1,8 @@
 [all:vars]
 remote_machine_username="admin"
-remote_machine_password="1234qwer"
+remote_machine_password="1234"
 ansible_python_interpreter=/usr/bin/python3
-
-[local_host]
-localhost ansible_port=22 ansible_host=127.0.0.1
-
-[local_host:vars]
 ssh_key_filename="ansible_rsa"
-ansible_ssh_private_key_file = ~/.ssh/id_homenet
 
 
 [ssh_setup_group]
