@@ -14,7 +14,7 @@ The `jq` utility was used to parse JSON database.
 DATABASE: relative path of DATABASE file being processed.
 
 OPTIONS:
-  -m, --month MM    month in MM format.
+  -m, --month NUM   month in num [0]1-12 format.
   -y, --year NUM    year in YYYY format.
 
   -h, --help        print this help message'
@@ -25,6 +25,10 @@ Database relative path "quotes.json"
 --month 03
 --year 2015
 ```
+
+## Used resources
+[https://en.wikipedia.org/wiki/Volatility_(finance)](https://en.wikipedia.org/wiki/Volatility_(finance))
+[https://en.wikipedia.org/wiki/Standard_deviation](https://en.wikipedia.org/wiki/Standard_deviation)
 
 ## Addition requirement for the subject:
 ```

@@ -6,13 +6,13 @@ Download the DATABASE if the file does not exist in the path.
 Show the value of the minimum volatility of the euro for the selected MONTH for
 years in the range starting from YEAR.
 Examples:
-./volatility.sh -m 03 -2015 quotes.json
+./volatility.sh -m 3 -y 2015 quotes.json
 ./volatility.sh --year 2017 --month 11 \'../quotes.json\'
 
 DATABASE: relative path of DATABASE file being processed. Default "quotes.json"
 
 OPTIONS:
-  -m, --month MM    month in MM format. Default 03
+  -m, --month NUM   month in num [0]1-12 format. Default 3
   -y, --year NUM    year in YYYY format. Default 2015
 
   -h, --help        print this help message'
@@ -55,11 +55,11 @@ elif [ "$#" -gt 1 ]; then
     # previous arg is option identifer
       case "${args[${ind} - 1]}" in
         -m|--month)
-          if [[ ${args[${ind}]} =~ ^[0-9]+$ && ${#args[${ind}]} -eq 2 ]];
-          then
-            month="${args[${ind}]}"
+          if [[ ${args[${ind}]} =~ ^[0-9]+$ ]] && \
+            [ "${args[${ind}]}" -ge 1 ] && [ "${args[${ind}]}" -le 12 ]; then
+            month=$(echo "${args[${ind}]}" | awk '{printf "%02d\n", $0}')
           else
-            echo "$error"
+            echo "Date error: month ${args[${ind}]}"
             exit 1
           fi
           ((ind++));;
@@ -103,22 +103,37 @@ fi
 raw_table=()
 while IFS= read -r line; do
   raw_table+=( "$line" )
-done < <( jq -r '.prices[][]' $db_path )
-
+done < <( jq -r '.prices[][]' $db_path | awk 'NR%2 {$1 = $1/1000} {print}' )
 # DEBUG print
 # printf '%s\n' "${raw_table[@]}"
 
-# save data in hashmap
+# create table with dates in human readable format
+dates_table=()
+while IFS= read -r line; do
+  tmp_table+=( "$line" )
+done < <(printf '%s\n' "${raw_table[@]}'" | awk 'NR%2 {print $1}' | jq todate)
+# DEBUG print
+# printf '%s\n' "${dates_table[@]}"
+
+# chage date lines in the table to human readable
 i=0
-declare -A values_map
+j=0
 for line in "${raw_table[@]}"; do
   if [ $((i % 2)) -eq 0 ]; then
-    v_date=$(date --date=@$((line / 1000)) +%Y%m%d)
-  elif [ $((i % 2)) -eq 1 ]; then
-    values_map[$v_date]=$line
+    raw_table[i]=${tmp_table[j]}
+    ((j+=1))
   fi
   ((i+=1))
 done
+
+# table 'date value'
+table=()
+while IFS= read -r line; do
+  table+=( "$line" )
+done < <( printf '%s\n' "${raw_table[@]}" | \
+  awk '{if (e) {print p" "$0;} else {p=$0;} e=!e;}' )
+# DEBUG print
+# printf '%s\n' "${table[@]}"
 
 # get years from db starting from `min_year`
 years=()
@@ -126,82 +141,26 @@ while IFS= read -r line; do
   if [ $((line)) -ge $((min_year)) ]; then
     years+=( "$line" )
   fi
-done < <((for v_date in "${!values_map[@]}"
-do
-  echo "$v_date ${values_map[$v_date]}"
-done;) | awk '{print substr($1,1,4)}' | sort -u)
-
+done < <(printf '%s\n' "${table[@]}'" | awk '{print substr($1,2,4)}' | sort -u)
 # DEBUG print
 # printf '%s\n' "${years[@]}"
 
-# filter month
-filter_month () {
-  stat_month=()
-  while IFS= read -r line; do
-    stat_month+=( "$line" )
-    echo $line
-  done < <(for v_date in "${!values_map[@]}"
-do
-  echo "$v_date ${values_map[$v_date]}"
-done;) | grep ${year}${month} | sort
-}
-
-# calculate min, mean and max values for selected month of each year
-for year in "${years[@]}"; do
-  stats[$year]=$(filter_month)
-  mean[$year]=0
-  count=0
-  if [[ ${#stats[$year]} -gt 0 ]]; then
-    # calculate min, mean and max values in month
-    while IFS= read -r line; do
-      if [ $count -eq 0 ]; then
-        min[$year]=$line
-        max[$year]=$line
-      else
-        if (( $(echo "$line < ${min[$year]}" | bc) )); then
-          min[$year]=$(echo "$line" | awk '{printf "%.4f", $0}')
-        fi
-        if (( $(echo "$line > ${max[$year]}" | bc) )); then
-          max[$year]=$(echo "$line" | awk '{printf "%.4f", $0}')
-        fi
+# calculate pair 'year volatility' with min volatility
+min_volatility_pair=$( for year in "${years[@]}"; do
+  stddev_tmp=$(printf '%s\n' "${table[@]}'" | \
+    awk "/\"$year-$month/ {print \$2}")
+      if  [[ ! -z $stddev_tmp ]]; then
+        volatility=$(printf '%s\n' "$stddev_tmp'" | \
+          awk '{x+=$0;y+=$0^2}END{print sqrt(y/NR-(x/NR)^2)*sqrt(252/12)}' | \
+          awk '{printf "%.4f\n", $1}')
+        printf '%s %s\n' "$year" "$volatility"
       fi
-      mean[$year]=$(echo ${mean[$year]} + $line | bc)
-      ((count++))
-    done < <( printf '%s\n' "${stats[${year}]}" | awk '{print $2}' )
-    mean[$year]=$(echo "scale=4; ${mean[$year]} / $count" | bc)
-    # DEBUG print
-    # printf "$year.$month  min %s\tmean %s\tmax %s\n" \
-    #   ${min[$year]} ${mean[$year]} ${max[$year]}
-  fi
-done
-
-# calculate volatility for selected month of each year, and get min of them
-min_volatility=0
-min_volatility_year=0
-count=0
-for year in "${years[@]}"; do
-  if [[ ${#stats[$year]} -gt 0 ]]; then
-    volatility[$year]=$(echo "scale=4; ((${mean[$year]} - ${min[$year]}) + \
-      (${max[$year]} - ${mean[$year]})) / 2" | bc | awk '{printf "%.4f", $0}')
-    if [ $count -eq 0 ]; then
-      min_volatility=${volatility[$year]}
-      min_volatility_year=$year
-    else
-      if (( $(echo "${volatility[$year]} < $min_volatility" | bc) )); then
-        min_volatility=${volatility[$year]}
-        min_volatility_year=$year
-      fi
-    fi
-    # DEBUG print
-    # printf "$year.$month  volatility %s\n" ${volatility[$year]}
-  fi
-  ((count++))
-done
-
+    done | LC_ALL=C sort -rg -k2 | tail -n 1 )
 # DEBUG print
-# printf "min_volatility %s in year %s\n" $min_volatility $min_volatility_year
+# echo $min_volatility_pair
 
 # final output
 printf "The %s with min volatility (%s) was in %s\n" \
-  $(LC_ALL=us_EN.utf8 date -d "1900-$month-01" +"%B") \
-  $min_volatility $min_volatility_year
+  $(LC_ALL=us_EN.utf8 date -d "$month/01" +"%B") \
+  $(echo $min_volatility_pair | awk '{printf $2}') \
+  $(echo $min_volatility_pair | awk '{printf $1}')
