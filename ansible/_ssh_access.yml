@@ -76,7 +76,10 @@
       shell: "ssh-keygen -t rsa -f ~/.ssh/{{ssh_key_filename}} -P \"\""
       register: ssh_key_creation
       failed_when: ssh_key_creation.rc != 0
-      when: ssh_key_file_exists_check is defined and ssh_key_file_exists_check.results[0].stat.exists == false and ssh_key_file_exists_check.results[1].stat.exists == false
+      when: >
+        ssh_key_file_exists_check is defined and
+        (ssh_key_file_exists_check.results[0].stat.exists == false or
+        ssh_key_file_exists_check.results[1].stat.exists == false)
 
     # - debug:
     #     var: ssh_key_creation
@@ -110,11 +113,12 @@
 
     - name: Distribute the ssh key to the remote hosts
       shell: "sshpass -p \"{{remote_machine_password}}\" ssh-copy-id -o StrictHostKeyChecking=no -i ~/.ssh/{{ssh_key_filename}}.pub -p {{ hostvars[item].ansible_port }} \"{{remote_machine_username}}@{{ hostvars[item].ansible_host }}\""
-      register: ssh_copy_id_execution
+      # register: ssh_copy_id_execution
       with_items:
         - "{{ groups['ssh_setup_group']}}"
-      failed_when: ssh_copy_id_execution.rc != 0
-      changed_when: False
+      # failed_when: ssh_copy_id_execution.rc != 0
+      ignore_errors: yes
+      changed_when: false
 
     # - debug:
     #     var: ssh_copy_id_execution
@@ -124,22 +128,12 @@
   ignore_unreachable: yes
 
   tasks:
-    - name: check ssh to remote hosts works
-      shell: "hostname; id"
-      register: ssh_connection_test
-      failed_when: ssh_connection_test.rc != 0
-
-    - name: print the connectivity test results
-      debug:
-        var: ssh_connection_test.stdout_lines
-
     - name: Disable root login
       ansible.builtin.replace:
         path: /etc/ssh/sshd_config
         regexp: 'PermitRootLogin yes'
         replace: 'PermitRootLogin no'
       register: disable_root
-      # failed_when: disable_root.rc != 0
 
     - name: Disable password authentication method
       ansible.builtin.replace:
@@ -147,7 +141,6 @@
         regexp: 'PasswordAuthentication yes'
         replace: 'PasswordAuthentication no'
       register: disable_password_auth
-      # failed_when: disable_password_auth.rc != 0
 
     - name: Restart sshd.service
       service:

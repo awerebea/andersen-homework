@@ -33,4 +33,4 @@ def emojis():
 
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(ssl_context=('ssl_cert', 'ssl_key'), debug=True)

@@ -1,0 +1,8 @@
+# Ansible playbook for sequential launch of all playbooks in order
+
+---
+- import_playbook: _ssh_access.yml
+- import_playbook: _firewall.yml
+- import_playbook: _openssl.yml
+- import_playbook: _flask.yml
+- import_playbook: _nginx.yml

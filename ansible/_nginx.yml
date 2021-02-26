@@ -4,82 +4,56 @@
 - hosts: servers
   become: yes
   tasks:
-    - name: Ensure `nginx`, `fonts-noto-color-emoji`, `openssl` are installed
+    # - name: Ensure `nginx`, `fonts-noto-color-emoji`, `openssl` are installed
+    #   apt:
+    #     name: ['nginx', 'fonts-noto-color-emoji', 'openssl']
+    #     state: present
+
+    - name: Ensure `nginx` is installed
       apt:
-        name: ['nginx', 'fonts-noto-color-emoji', 'openssl']
+        name: nginx
         state: present
-
-    - name: Check if `/etc/ssl/selfsigned_sert` directory exists
-      stat:
-        path: "/etc/ssl/selfsigned_sert"
-      register: ssl_certificate_dir_exists_check
-
-    - name: Create `/etc/ssl/selfsigned_sert` directory
-      file:
-        path: /etc/ssl/selfsigned_sert
-        state: directory
-        mode: 0775
-        recurse: yes
-      when: ssl_certificate_dir_exists_check is defined and
-            ssl_certificate_dir_exists_check.stat.exists == false
-
-    - name: Check ssl sertificate and private ley exists
-      stat:
-        path: "/etc/ssl/selfsigned_sert/{{item}}"
-      with_items:
-        - "sert.crt"
-        - "privkey.pem"
-      register: ssl_certificate_exists_check
-
-    - name: Generate ssl selfsigned sertificate
-      shell: "openssl req -newkey rsa:2048 -x509 -sha256 -days 30 -nodes \
-              -out /etc/ssl/selfsigned_sert/sert.crt \
-              -keyout /etc/ssl/selfsigned_sert/privkey.pem \
-              -subj '/C=RU/ST=Tatarstan/L=Kazan/O=Andersen DevOps courses/\
-              OU=Andrei Bulgakov/CN='"
-      register: ssl_certificate_generated
-      when: ssl_certificate_exists_check is defined and
-            ssl_certificate_exists_check.results[0].stat.exists == false or
-            ssl_certificate_exists_check.results[1].stat.exists == false
 
     - name: Remove `default` site from `sites-enabled`
       file:
         path: /etc/nginx/sites-enabled/default
         state: absent
 
-    - name: Copy `nginx.conf` to `sites-available` with name `my_service`
+    - name: Copy `nginx.conf` to `sites-available` with name `my_webserv`
       copy:
         src: nginx.conf
-        dest: /etc/nginx/sites-available/my_service
+        dest: /etc/nginx/sites-available/my_webserv
       register: nginx_conf_copied
+      notify: restart_nginx
 
-    - name: Create symlink `my_service` config to `sites-enabled`
+    - name: Replace ssl certificate path in `my_webserv`
+      ansible.builtin.replace:
+        dest: /etc/nginx/sites-available/my_webserv
+        regexp: 'ssl_certificate;'
+        replace: "ssl_certificate /etc/ssl/certificates/{{ server_hostname }}_cert.pem;"
+      when: nginx_conf_copied is defined
+
+    - name: Replace ssl key path in `my_webserv`
+      ansible.builtin.replace:
+        dest: /etc/nginx/sites-available/my_webserv
+        regexp: 'ssl_certificate_key;'
+        replace: "ssl_certificate_key /etc/ssl/certificates/{{ server_hostname }}_privkey.pem;"
+      when: nginx_conf_copied is defined
+
+    - name: Create symlink `my_webserv` config to `sites-enabled`
       file:
-        src: /etc/nginx/sites-available/my_service
-        dest: /etc/nginx/sites-enabled/my_service
+        src: /etc/nginx/sites-available/my_webserv
+        dest: /etc/nginx/sites-enabled/my_webserv
         state: link
 
-    - name: Create `/var/www/my_service` directory for service files
-      file:
-        path: /var/www/my_service
-        state: directory
-        mode: 0775
-        recurse: yes
-
-    - name: Copy `index.html`
-      copy:
-        src: index.html
-        dest: /var/www/my_service/
-
-    - name: Ensure `nginx` is running
+    - name: Start `nginx` and enable autolaunch after reboot
       service:
         name: nginx
         state: started
         enabled: yes
 
-    - name: Reload `nginx`
+  handlers:
+    - name: restart_nginx
       service:
         name: nginx
         state: restarted
-        enabled: yes
-      when: nginx_conf_copied.changed or ssl_certificate_generated.changed
