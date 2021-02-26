@@ -1,0 +1,32 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+    <title>Welcome to Andersen DevOps courses homework task04 website!</title>
+</head>
+<body>
+<h1>Welcome to Andersen DevOps courses homework task04 website!</h1>
+<p>If you see this page, the Flask web application is working.<br/>
+Now you could try to make POST request with curl in terminal, something like this:<br/>
+<span style="font-family: Tahoma, Verdana, Arial, sans-serif; border: 1px solid black">
+    curl -XPOST -d'{"word":"thumbs_up", "count": 5}' http://localhost:5000/
+</span><br/>
+or<br/>
+<span style="font-family: Tahoma, Verdana, Arial, sans-serif; border: 1px solid black">
+    curl -XPOST -d'{"word":"elephant", "count": 3}' http://localhost:5000/
+</span></p>
+
+<p>The output should be:<br/>
+<span style="font-family: Tahoma, Verdana, Arial, sans-serif; border: 1px solid black">
+    👍thumbs_up👍thumbs_up👍thumbs_up👍thumbs_up👍thumbs_up
+</span><br/>
+and<br/>
+<span style="font-family: Tahoma, Verdana, Arial, sans-serif; border: 1px solid black">
+    🐘elephant🐘elephant🐘elephant
+</span><br/>
+respectively</p>
+<p>Also you could see preview of emoji by typing it's name in address line,
+like that:</br>
+<a href="http://localhost:5000/mouse">localhost:5000/mouse</a><br/>
+or</br>
+<a href="http://localhost:5000/turtle">localhost:5000/turtle</a><br/>
+</p>
