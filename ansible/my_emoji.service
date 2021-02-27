@@ -1,0 +1,11 @@
+[Unit]
+Description=Emoji_loopback_app
+After=network.target
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/python3 app_install_path/flask_emoji.py
+User=root
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,18 @@
+[all:vars]
+remote_machine_username="admin"
+remote_machine_password="1234"
+ansible_python_interpreter=/usr/bin/python3
+ssh_key_filename="ansible_rsa"
+
+
+[ssh_setup_group]
+server-1_passwd ansible_host=192.168.1.246 ansible_port=22 ansible_user=root ansible_password=qwer
+
+
+[servers]
+server-1 ansible_host=192.168.1.246 ansible_port=22 ansible_user=admin server_hostname=myvm.localhost
+
+[servers:vars]
+ansible_ssh_private_key_file = ~/.ssh/ansible_rsa
+ansible_sudo_pass={{remote_machine_password}}
+server_hostname=sample.hostname.com

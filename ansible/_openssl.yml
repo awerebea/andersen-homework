@@ -1,0 +1,85 @@
+# Ansible playbook to establish `OpenSSL` with selfsigned sertificate
+
+---
+- hosts: servers
+  become: yes
+  vars:
+    - key_size: 4096
+    - passphrase: # Set if you want passphrase
+    - key_type: RSA # Others include DSA, ECC, Ed25519, Ed448, X25519, X448
+    - country_name: RU
+    - email_address: a.bulgakov.86@gmail.com
+    - organization_name: DevOps courses
+
+  tasks:
+    - name: Ensure `pip`, `virtualenv`, `setuptools` are installed
+      apt:
+        name:
+          - python3-pip
+          - python3-virtualenv
+          - python3-setuptools
+        state: present
+
+    - name: Force upgrade pip
+      pip:
+        name: pip
+        state: latest
+
+    - name: Install `pyOpenSSL`
+      pip:
+        name:
+          - pyOpenSSL
+        state: present
+
+    - name: Check if `/etc/ssl/certificates` directory exists
+      stat:
+        path: "/etc/ssl/certificates"
+      register: ssl_certificate_dir_exists_check
+      changed_when: false
+
+    - name: Create `/etc/ssl/certificates` directory
+      file:
+        path: /etc/ssl/certificates
+        state: directory
+        mode: 0775
+        recurse: yes
+      when: ssl_certificate_dir_exists_check is defined and
+            ssl_certificate_dir_exists_check.stat.exists == false
+
+    - name: Check ssl sertificate and private key exists
+      stat:
+        path: "/etc/ssl/certificates/{{item}}"
+      with_items:
+        - "{{ server_hostname }}_privkey.pem"
+        - "{{ server_hostname }}.csr"
+        - "{{ server_hostname }}_cert.pem"
+      register: ssl_certificate_exists_check
+      changed_when: false
+
+    - name: Generate an OpenSSL private key
+      openssl_privatekey:
+        path: "/etc/ssl/certificates/{{ server_hostname }}_privkey.pem"
+        size: "{{ key_size }}"
+        type: "{{ key_type }}"
+        backup: yes
+      when: >
+        ssl_certificate_exists_check is defined and
+        (ssl_certificate_exists_check.results[0].stat.exists == false or
+        ssl_certificate_exists_check.results[1].stat.exists == false or
+        ssl_certificate_exists_check.results[2].stat.exists == false)
+
+    - name: Generate an OpenSSL Certificate Signing Request with Subject information
+      openssl_csr:
+        path: "/etc/ssl/certificates/{{ server_hostname }}.csr"
+        privatekey_path: "/etc/ssl/certificates/{{ server_hostname }}_privkey.pem"
+        country_name: "{{ country_name }}"
+        organization_name: "{{ organization_name }}"
+        email_address: "{{ email_address }}"
+        common_name: "{{ server_hostname }}"
+
+    - name: Generate a Self Signed OpenSSL certificate
+      openssl_certificate:
+        path: "/etc/ssl/certificates/{{ server_hostname }}_cert.pem"
+        privatekey_path: "/etc/ssl/certificates/{{ server_hostname }}_privkey.pem"
+        csr_path: "/etc/ssl/certificates/{{ server_hostname }}.csr"
+        provider: selfsigned
