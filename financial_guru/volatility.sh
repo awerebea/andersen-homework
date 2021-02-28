@@ -145,22 +145,57 @@ done < <(printf '%s\n' "${table[@]}'" | awk '{print substr($1,2,4)}' | sort -u)
 # DEBUG print
 # printf '%s\n' "${years[@]}"
 
-# calculate pair 'year volatility' with min volatility
-min_volatility_pair=$( for year in "${years[@]}"; do
+# # calculate pair 'year volatility' with min volatility
+# min_volatility_pair=$( for year in "${years[@]}"; do
+#   stddev_tmp=$(printf '%s\n' "${table[@]}'" | \
+#     awk "/\"$year-$month/ {print \$2}")
+#       if  [[ ! -z $stddev_tmp ]]; then
+#         volatility=$(printf '%s\n' "$stddev_tmp'" | \
+#           awk '{x+=$0;y+=$0^2}END{print sqrt(y/NR-(x/NR)^2)*sqrt(252/12)}' | \
+#           awk '{printf "%.4f\n", $1}')
+#         printf '%s %s\n' "$year" "$volatility"
+#       fi
+#     done | LC_ALL=C sort -rg -k2 | tail -n 1 )
+# # DEBUG print
+# # echo $min_volatility_pair
+
+# # final output
+# printf "The %s with min volatility (%s) was in %s\n" \
+#   $(LC_ALL=us_EN.utf8 date -d "$month/01" +"%B") \
+#   $(echo $min_volatility_pair | awk '{printf $2}') \
+#   $(echo $min_volatility_pair | awk '{printf $1}')
+
+# calculate table with pairs 'year volatility'
+volatility_table=()
+for year in "${years[@]}"; do
   stddev_tmp=$(printf '%s\n' "${table[@]}'" | \
     awk "/\"$year-$month/ {print \$2}")
       if  [[ ! -z $stddev_tmp ]]; then
         volatility=$(printf '%s\n' "$stddev_tmp'" | \
           awk '{x+=$0;y+=$0^2}END{print sqrt(y/NR-(x/NR)^2)*sqrt(252/12)}' | \
           awk '{printf "%.4f\n", $1}')
-        printf '%s %s\n' "$year" "$volatility"
+        volatility_table+=( "$year $volatility" )
+        if [ $year -eq $min_year ]; then
+          volatility_min=$volatility
+          volatility_min_year=$year
+        elif [ $(bc <<< "$volatility < $volatility_min") -eq 1 ]; then
+          volatility_min=$volatility
+          volatility_min_year=$year
+        fi
       fi
-    done | LC_ALL=C sort -rg -k2 | tail -n 1 )
+done
 # DEBUG print
-# echo $min_volatility_pair
+# printf '%s\n' "${volatility_table[@]}"
 
 # final output
-printf "The %s with min volatility (%s) was in %s\n" \
-  $(LC_ALL=us_EN.utf8 date -d "$month/01" +"%B") \
-  $(echo $min_volatility_pair | awk '{printf $2}') \
-  $(echo $min_volatility_pair | awk '{printf $1}')
+printf "Volatility for $(tput bold)$(tput setaf 3)%s$(tput sgr0) by years:\n" \
+  $(LC_ALL=us_EN.utf8 date -d "$month/01" +"%B")
+for line in "${volatility_table[@]}"; do
+  if [ $(echo $line | awk '{print $1}') -eq $volatility_min_year ]; then
+    printf "$(tput bold)$(tput setaf 2)%s - %s$(tput sgr0)\n" \
+      $(echo $line | awk '{printf $1}') $(echo $line | awk '{printf $2}')
+  else
+    printf "%s - %s\n" \
+      $(echo $line | awk '{printf $1}') $(echo $line | awk '{printf $2}')
+  fi
+done
