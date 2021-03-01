@@ -44,6 +44,9 @@ err_arg_invalid="$err_arg_invalid Type './pulls.sh --help' to see more info"
 err_api_rate_limit="API rate limit exceeded. Type './pulls.sh --help'"
 err_api_rate_limit="$err_api_rate_limit and note '--token' option"
 
+err_bad_credentials="Bad credentials. Check your personal token."
+err_bad_credentials="$err_bad_credentials https://docs.github.com/rest"
+
 # difine default conditions
 def_min_num=2 # the minimum number of open PR's to consideration the contributor
 
@@ -136,9 +139,15 @@ while [[ $cout_of_records -gt 0 ]]; do
   if [[ ! -z $token ]]; then
     page_content=$(curl $silent -H "Authorization: token $token" \
       "${request_url}${page_num}")
+    if [[ "$(echo "${page_content}" | jq '.[]')" =~ ^"\"Bad credentials".* ]]
+    then
+      echo $err_bad_credentials
+      exit 1
+    fi
   else
     page_content=$(curl $silent "${request_url}${page_num}")
-    if [[ "${page_content}" =~ ^"{\"message\":\"API rate limit exceeded".* ]]
+    if [[ "$(echo "${page_content}" | jq '.[]')" =~ \
+      ^"\"API rate limit exceeded".* ]]
     then
       echo $err_api_rate_limit
       exit 1
