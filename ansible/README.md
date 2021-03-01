@@ -13,7 +13,7 @@ First of all you should have `Python 3` and `Ansible` installed on your *Ansible
 In my case I used Virtualbox VM with ssh access for `root` user with password authentication (at start) as remote machine and my localhost as Ansible automation platform.
 
 To be able connect to the remote machine I configured VM network adapter as attached to "Bridget Adapter".
-<br/>![vm_net_setup](https://user-images.githubusercontent.com/63558838/109376759-d57d6a00-78d7-11eb-8367-683589d1b6a2.png)<br/>
+<br/>![vm_net_setup](https://user-images.githubusercontent.com/63558838/109476250-b7ef0280-7a87-11eb-87d2-5ef1a917e6e6.png)<br/>
 Example of my access-configuration to nodes at this stage presented inventory `inventory` file. You should replace `ansible_host` IP address in `[ssh_setup_group]` and `[servers]` groups accordingly your remote machine setup.
 
 **NOTE:** to be able connect to remote machine using hostname instead IP address if you have sudo access, you could add entry in `/etc/hosts`.   
@@ -44,13 +44,13 @@ After the deployment is complete, you can try running something like this:
 ```sh
 $ curl -XPOST --insecure -d'{"word":"turtle", "count": 8}' https://myvm.localhost/
 ```
-<br/>![output_sample](https://user-images.githubusercontent.com/63558838/109376760-d6160080-78d7-11eb-95b5-f66861e917f0.png)<br/>
+<br/>![output_sample](https://user-images.githubusercontent.com/63558838/109478943-e91d0200-7a8a-11eb-9447-42538f578e95.png)<br/>
 **NOTE:** `--insecure` flag added to allow `curl` connect to the server using an *untrusted* selfsigned certificate.
 More details here: [https://curl.se/docs/sslcerts.html](https://curl.se/docs/sslcerts.html)
 ## GET method
 To test http `GET` request method, you can enter the IP address of the remote machine in the address bar of your preferred browser.
 After accepting the risks of using an untrusted certificate, the index page is displayed.
-<br/>![index](https://user-images.githubusercontent.com/63558838/109381613-72e29900-78ec-11eb-89a9-83a38ea0544e.png)<br/>
+<br/>![index](https://user-images.githubusercontent.com/63558838/109476239-b58ca880-7a87-11eb-86ce-217dd7fa1f68.png)<br/>
 By adding the name of an emoji to the address, you can see its preview. 
-<br/>![thumbs_up](https://user-images.githubusercontent.com/63558838/109376897-8f74d600-78d8-11eb-83c1-ea932c4d19c2.png)<br/>
-<br/>![cat](https://user-images.githubusercontent.com/63558838/109376896-8edc3f80-78d8-11eb-94c3-f80546445fdf.png)<br/>
+<br/>![thumbs_up](https://user-images.githubusercontent.com/63558838/109476248-b7566c00-7a87-11eb-8627-334547434e3d.png)<br/>
+<br/>![cat](https://user-images.githubusercontent.com/63558838/109476242-b6bdd580-7a87-11eb-855d-3f7c82f72549.png)<br/>
