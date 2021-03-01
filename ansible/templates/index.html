@@ -12,7 +12,7 @@ Now you could try to make POST request with curl in terminal, something like thi
 </span><br/>
 or<br/>
 <span style="font-family: Tahoma, Verdana, Arial, sans-serif; border: 1px solid black">
-    curl -XPOST --insecure -d'{"word":"elephant", "count": 3}' https://192.168.1.246/
+    curl -XPOST -d'{"word":"elephant", "count": 3}' http://192.168.1.246/
 </span></p>
 
 <p>The output should be:<br/>
@@ -24,5 +24,10 @@ and<br/>
     🐘elephant🐘elephant🐘elephant
 </span><br/>
 respectively</p>
+<p><b>NOTE</b>: in case you are using an https (secure) connection, you should add the
+ <span style="font-family: Tahoma, Verdana, Arial, sans-serif; border: 1px solid black">
+--insecure</span> flag to allow <b>curl</b> connect to the server
+ using an <i>untrusted</i> selfsigned certificate. More details here:
+ <a href="https://curl.se/docs/sslcerts.html">https://curl.se/docs/sslcerts.html</a></p>
 <p>Also you could see preview of emoji by appending it's name in address line.
 </p>
