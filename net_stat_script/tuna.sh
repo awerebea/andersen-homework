@@ -62,6 +62,11 @@ error="Syntax error. Type './tuna.sh --help' to see more info"
 # get number of elements
 ELEMENTS=${#args[@]}
 
+# function to print errors to stderr
+print_err() {
+  printf "%s\n" "$*" >&2;
+}
+
 # parse input parameters
 # set default values to avoid errors if no arguments passed
 proc=${def_proc}
@@ -89,13 +94,19 @@ elif [ "$#" -gt 1 ]; then
     # previous arg is option identifier
       case "${args[${ind} - 1]}" in
         -m|--max-count)
-          num="${args[${ind}]}"
+          if [[ ${args[${ind}]} =~ ^[0-9]+$ ]] && [ "${args[${ind}]}" -ge 1 ]
+          then
+            num="${args[${ind}]}"
+          else
+            print_err $error
+            exit 1
+          fi
           ((ind++));;
         -f|--filter)
           if [[ " ${states[@]} " =~ " ${args[${ind}],,} " ]]; then
             state="${args[${ind}]}"
           else
-            echo "$error"
+            print_err $error
             exit 1
           fi
           ((ind++));;
@@ -112,7 +123,7 @@ elif [ "$#" -gt 1 ]; then
           proc="${args[${ind}]}"
         else
         # arg is not last in args - syntax error
-          echo "$error"
+          print_err $error
           exit 1
         fi
       fi
@@ -127,39 +138,44 @@ while IFS= read -r line; do
   raw_table+=( "$line" )
 done < <( ss -tunap state $state )
 
-# DEBUG print
-# printf '%s\n' "${raw_table[@]}"
-
 # filter raw table by "process NAME" OR pid=PID
 filtered_table=()
+processes_list=()
 for line in "${raw_table[@]}"; do
   process=$(echo $line | awk "{print \$7}" | awk "/\".*$proc.*\"|pid=.*$proc/")
   IP=$(echo $line | awk "!/[*]/ {print \$6}")
   if [[ ! -z $process && ! -z $IP ]]; then
     filtered_table+=( "$line" )
+    processes_list+=( $(echo $process | sed 's/[^"]*"\([^"]*\)".*/\1/') )
   fi
 done
-
-# DEBUG print
-# printf '%s\n' "${filtered_table[@]}"
 
 # create table of Peer ip addresses with connections count
 ip_table=()
 while IFS= read -r line; do
   ip_table+=( "$line" )
-done < <( printf '%s\n' "${filtered_table[@]}" | awk "{print \$6}" | \
-  grep -E '.*[0-9]{1,4}(\.|\:).*' | sed 's/\(.*\)\:.*/\1/' | \
+done < <( printf '%s\n' "${filtered_table[@]}" | awk "{print \$6}" |
+  grep -E '.*[0-9]{1,4}(\.|\:).*' | sed 's/\(.*\)\:.*/\1/' |
   tr -d '[]' | sort | uniq -c | sort -r | head -n$num )
 
-# DEBUG print
-# printf '%s\n' "${ip_table[@]}"
-
 # final output
+separator_line="--------------------------------------------------------+"
+separator_line="$separator_line--------------------"
+printf "Processes with a name/ID that matches the pattern \
+\"$(tput bold)$(tput setaf 2)${proc}$(tput sgr0)\":\n"
+printf "$(tput setaf 2)%s$(tput sgr0)\n" "${processes_list[@]}" | sort | uniq
+echo $separator_line
+printf "%-55s | Num of connections\n" \
+  "Organization name with established connection"
+echo $separator_line
 for line in "${ip_table[@]}"; do
-  connection_count=$(echo $line | cut -f1 -d' ')
+  connections_num=$(echo $line | cut -f1 -d' ')
   IP=$(echo $line | cut -f2 -d' ')
-  organization=$(whois $IP | \
-    awk -F':' '/^[Oo]rganization|^[Oo]rganisation|^[Rr]ole/ {print $2}' | \
+  organization=$(whois $IP |
+    awk -F':' '/^[Oo]rganization|^[Oo]rganisation|^[Rr]ole/ {print $2}' |
     awk '{$1=$1};1' | tail -n1)
-  echo $organization "($connection_count connection[s])"
+    echo $organization |
+      awk 'length > 52{$0 = substr($0, 1, 52) "..."} {printf "%-55s", $0}'
+    printf " |        %2s\n" "$(echo $connections_num)"
+echo $separator_line
 done
