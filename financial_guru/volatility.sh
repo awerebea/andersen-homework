@@ -32,6 +32,11 @@ def_min_year=2015           # start year of statistical calculations
 def_month=03                # select month
 def_oneline=0               # print whole table
 
+# function to print errors to stderr
+print_err() {
+  printf "%s\n" "$*" >&2;
+}
+
 # parse input parameters
 # set default values to avoid errors if no arguments passed
 db_path=$def_db_path
@@ -62,11 +67,11 @@ elif [ "$#" -gt 1 ]; then
     # previous arg is option identifier
       case "${args[${ind} - 1]}" in
         -m|--month)
-          if [[ ${args[${ind}]} =~ ^[0-9]+$ ]] && \
+          if [[ ${args[${ind}]} =~ ^[0-9]+$ ]] &&
             [ "${args[${ind}]}" -ge 1 ] && [ "${args[${ind}]}" -le 12 ]; then
             month=$(echo "${args[${ind}]}" | awk '{printf "%02d\n", $0}')
           else
-            echo "Date error: month ${args[${ind}]}"
+            print_err "Date error: month ${args[${ind}]}"
             exit 1
           fi
           ((ind++));;
@@ -75,7 +80,7 @@ elif [ "$#" -gt 1 ]; then
           then
             min_year="${args[${ind}]}"
           else
-            echo "$error"
+            print_err "$error"
             exit 1
           fi
           ((ind++));;
@@ -94,7 +99,7 @@ elif [ "$#" -gt 1 ]; then
           proc="${args[${ind}]}"
         else
         # arg is not last in args - syntax error
-          echo "$error"
+          print_err $error
           exit 1
         fi
       fi
@@ -113,16 +118,12 @@ raw_table=()
 while IFS= read -r line; do
   raw_table+=( "$line" )
 done < <( jq -r '.prices[][]' $db_path | awk 'NR%2 {$1 = $1/1000} {print}' )
-# DEBUG print
-# printf '%s\n' "${raw_table[@]}"
 
 # create table with dates in human readable format
 dates_table=()
 while IFS= read -r line; do
   tmp_table+=( "$line" )
 done < <(printf '%s\n' "${raw_table[@]}'" | awk 'NR%2 {print $1}' | jq todate)
-# DEBUG print
-# printf '%s\n' "${dates_table[@]}"
 
 # chage date lines in the table to human readable
 i=0
@@ -139,10 +140,8 @@ done
 table=()
 while IFS= read -r line; do
   table+=( "$line" )
-done < <( printf '%s\n' "${raw_table[@]}" | \
+done < <( printf '%s\n' "${raw_table[@]}" |
   awk '{if (e) {print p" "$0;} else {p=$0;} e=!e;}' )
-# DEBUG print
-# printf '%s\n' "${table[@]}"
 
 # get years from db starting from `min_year`
 years=()
@@ -151,34 +150,33 @@ while IFS= read -r line; do
     years+=( "$line" )
   fi
 done < <(printf '%s\n' "${table[@]}'" | awk '{print substr($1,2,4)}' | sort -u)
-# DEBUG print
-# printf '%s\n' "${years[@]}"
+
+# volatility calculation function
+volatility_calc () {
+  volatility=$(printf '%s\n' "$filtered_data'" |
+    awk '{x+=$0;y+=$0^2}END{print sqrt(y/NR-(x/NR)^2)*sqrt(252/12)}' |
+    awk '{printf "%.4f\n", $1}')
+}
 
 # the calculations below depend on whether the "--oneline" option is defined
 if  [[ $oneline -eq 1 ]]; then
   # calculate pair 'year volatility' with min volatility
   min_volatility_pair=$( for year in "${years[@]}"; do
-    filtered_data=$(printf '%s\n' "${table[@]}'" | \
+    filtered_data=$(printf '%s\n' "${table[@]}'" |
       awk "/\"$year-$month/ {print \$2}")
         if  [[ ! -z $filtered_data ]]; then
-          volatility=$(printf '%s\n' "$filtered_data'" | \
-            awk '{x+=$0;y+=$0^2}END{print sqrt(y/NR-(x/NR)^2)*sqrt(252/12)}' | \
-            awk '{printf "%.4f\n", $1}')
+          volatility_calc
           printf '%s %s\n' "$year" "$volatility"
         fi
       done | LC_ALL=C sort -rg -k2 | tail -n 1 )
-  # DEBUG print
-  # echo $min_volatility_pair
 else
   # calculate table with pairs 'year volatility'
   volatility_table=()
   for year in "${years[@]}"; do
-    filtered_data=$(printf '%s\n' "${table[@]}'" | \
+    filtered_data=$(printf '%s\n' "${table[@]}'" |
       awk "/\"$year-$month/ {print \$2}")
         if  [[ ! -z $filtered_data ]]; then
-          volatility=$(printf '%s\n' "$filtered_data'" | \
-            awk '{x+=$0;y+=$0^2}END{print sqrt(y/NR-(x/NR)^2)*sqrt(252/12)}' | \
-            awk '{printf "%.4f\n", $1}')
+          volatility_calc
           volatility_table+=( "$year $volatility" )
           if [[ -z $volatility_min ]]; then
             volatility_min=$volatility
@@ -190,8 +188,6 @@ else
         fi
   done
 fi
-  # DEBUG print
-  # printf '%s\n' "${volatility_table[@]}"
 
 # final output depend on whether the "--oneline" option is defined
 if  [[ $oneline -eq 1 ]]; then
