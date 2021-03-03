@@ -19,26 +19,26 @@ Example of my access-configuration to nodes at this stage presented inventory `i
 **NOTE:** to be able connect to remote machine using hostname instead IP address if you have sudo access, you could add entry in `/etc/hosts`.   
 
 ## How it works
-The environment is deployed by executing Ansible's playbooks (.yml files):
-* ***_ssh_access.yml***
+The environment is deployed by executing Ansible's playbooks (*.yml* files in *tasks/* directory):
+* ***ssh_access.yml***
 The first step is create `admin` user on remote machine, create ssh-key pair on localhost and store public part of this key in `admin's` `authorized_keys` on remote machine to get ssh access for that user using ssh-key authorization instead password.
 Also in this step disable root login and disable password authentication.
-* ***_firewall.yml***
+* ***firewall.yml***
 The second step is setup firewall rules. Remote machine should allow connections only to the ports 22, 80, 443.
-* ***_openssl.yml***
+* ***openssl.yml***
 Install pyOpenSSL and generate self signed certificate with private key.
-* ***_flask.yml***
+* ***flask.yml***
 Install Flask and emoji modules, copy to server application files, configure systemd so that the application starts after reboot, launch service.
-* ***_nginx.yml***
+* ***nginx.yml***
 Install nginx web server, configure it as reverse-proxy to Flask app.
 Setup redirection from unsecure (http:) connection on port 80 to secured (https:) on port 443.
-* ***_deploy_emoji_app.yml***
+* ***deploy_emoji_app.yml***
 Launch all playbooks described above in the same order.
 
 ## Usage
 To launch deploy process in the directory with inventory and .yml:
 ```sh
-$ ansible-playbook _deploy_emoji_app.yml
+$ ansible-playbook deploy_emoji_app.yml
 ```
 After the deployment is complete, you can try running something like this:
 ```sh
