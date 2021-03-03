@@ -53,6 +53,11 @@ err_rep_not_found_end="\" not found."
 # define default conditions
 def_min_num=2 # the minimum number of open PR's to consideration the contributor
 
+# function to print errors to stderr
+print_err() {
+  printf "%s\n" "$*" >&2;
+}
+
 # parse input parameters
 # set default values
 labels=0
@@ -60,7 +65,7 @@ silent="-s"
 min_num=$def_min_num
 # check arguments
 if [ "$#" -eq 0 ]; then
-  echo "$err_arg_miss"
+  print_err $err_arg_miss
   exit 1
 elif [ "$#" -eq 1 ]; then
 # there is only one argument
@@ -71,8 +76,8 @@ elif [ "$#" -eq 1 ]; then
   else
     # the only argument is repo URL
     if [[ ! "$1" =~ ^"https://github.com/".*"/".* ]]; then
-      echo $1
-      echo "$err_arg_invalid"
+      print_err $1
+      print_err $err_arg_invalid
       exit 1
     fi
     input_url=$1
@@ -88,11 +93,11 @@ elif [ "$#" -gt 1 ]; then
     # previous arg is option identifier
       case "${args[${ind} - 1]}" in
         -m|--min-num)
-          if [[ ${args[${ind}]} =~ ^[0-9]+$ ]] && \
+          if [[ ${args[${ind}]} =~ ^[0-9]+$ ]] &&
             [ "${args[${ind}]}" -ge 1 ]; then
             min_num="${args[${ind}]}"
           else
-            echo "$err_syntax"
+            print_err $err_syntax
             exit 1
           fi
           ((ind++));;
@@ -113,14 +118,14 @@ elif [ "$#" -gt 1 ]; then
       else
         if [ $ind -eq $(($#-1)) ]; then
           if [[ ! "${args[${ind}]}" =~ ^"https://github.com/".*"/".* ]]; then
-            echo "${args[${ind}]}"
-            echo "$err_arg_invalid"
+            print_err "${args[${ind}]}"
+            print_err $err_arg_invalid
             exit 1
           fi
           input_url="${args[${ind}]}"
         else
         # arg is not last in args - syntax error
-          echo "$err_syntax"
+          print_err $err_syntax
           exit 1
         fi
       fi
@@ -130,7 +135,7 @@ elif [ "$#" -gt 1 ]; then
 fi
 
 # generate request URL
-request_url=$(echo $input_url | \
+request_url=$(echo $input_url |
   sed 's/https:\/\/github.com/https:\/\/api.github.com\/repos/')
 request_url="${request_url}/pulls?page="
 
@@ -144,29 +149,29 @@ while [[ $num_of_records -gt 0 ]]; do
       "${request_url}${page_num}")
     if [[ "$(echo "${page_content}" | jq '.[]')" =~ ^"\"Bad credentials".* ]]
     then
-      echo $err_bad_credentials
+      print_err $err_bad_credentials
       exit 1
     fi
     if [[ $(echo "${page_content}" | jq '.[]') =~ ^"\"Not Found\"" ]]; then
-      echo ${err_rep_not_found_start}${input_url}${err_rep_not_found_end}
+      print_err ${err_rep_not_found_start}${input_url}${err_rep_not_found_end}
       exit 1
     fi
     if [[ "$(echo "${page_content}" | jq '.[]')" =~ \
       ^"\"API rate limit exceeded".* ]]
     then
-      echo $err_api_rate_limit
+      print_err $err_api_rate_limit
       exit 1
     fi
   else
     page_content=$(curl $silent "${request_url}${page_num}")
     if [[ $(echo "${page_content}" | jq '.[]') =~ ^"\"Not Found\"" ]]; then
-      echo ${err_rep_not_found_start}${input_url}${err_rep_not_found_end}
+      print_err ${err_rep_not_found_start}${input_url}${err_rep_not_found_end}
       exit 1
     fi
     if [[ "$(echo "${page_content}" | jq '.[]')" =~ \
       ^"\"API rate limit exceeded".* ]]
     then
-      echo $err_api_rate_limit
+      print_err $err_api_rate_limit
       exit 1
     fi
   fi
@@ -175,43 +180,38 @@ while [[ $num_of_records -gt 0 ]]; do
   ((page_num++))
 done
 
-# final output
-if [ "$labels" -eq 0 ]; then
+# print result table function
+print_result_table() {
   all_contributors=()
   while IFS= read -r line; do
     all_contributors+=( "$line" )
-  done < <(printf "%s\n" "${table_raw[@]}" | \
+  done < <(printf "%s\n" "$1" | \
     jq -r '.[].user.login' | sort | uniq -c | sort -k1gr -k2g)
   printf "Contributors with at least %s open pull requests:\n" $min_num
-  echo "--------------------------+------"
-  printf "%-25s | PR's\n" "User login"
-  echo "--------------------------+------"
+  echo $separator_line
+  printf "%-25s | $pr_column_label\n" "User login"
+  echo $separator_line
   for line in "${all_contributors[@]}"; do
     if [[ $(echo $line | awk '{print $1}') -ge $min_num ]]; then
-      printf "%-25s | %2s\n" \
+      printf "%-25s | $spacer%2s\n" \
         $(echo $line | awk '{printf $2}') $(echo $line | awk '{printf $1}')
-      echo "--------------------------+------"
+        echo $separator_line
     fi
   done
+}
+
+# final output
+if [ "$labels" -eq 0 ]; then
+  separator_line="--------------------------+------"
+  pr_column_label="PR's"
+  spacer=""
+  print_result_table "${table_raw[@]}"
 else
   # PR's with labels
-  prs_with_labels=$(printf "%s\n" "${table_raw[@]}" | \
+  separator_line="--------------------------+------------------"
+  pr_column_label="PR's with labels"
+  spacer="    "
+  prs_with_labels=$(printf "%s\n" "${table_raw[@]}" |
     jq -r '[.[] | select(.labels[].id != null)] | unique')
-  all_contributors=()
-  while IFS= read -r line; do
-    all_contributors+=( "$line" )
-  done < <(printf "%s\n" "${prs_with_labels[@]}" | \
-    jq -r '.[].user.login' | sort | uniq -c | sort -k1gr -k2g)
-  printf "Contributors with at least %s open pull requests \
-$(tput bold)with labels$(tput sgr0):\n" $min_num
-  echo "--------------------------+------------------"
-  printf "%-25s | PR's with labels\n" "User login"
-  echo "--------------------------+------------------"
-  for line in "${all_contributors[@]}"; do
-    if [[ $(echo $line | awk '{print $1}') -ge $min_num ]]; then
-      printf "%-25s |     %2s\n" \
-        $(echo $line | awk '{printf $2}') $(echo $line | awk '{printf $1}')
-      echo "--------------------------+------------------"
-    fi
-  done
+  print_result_table "${prs_with_labels[@]}"
 fi
