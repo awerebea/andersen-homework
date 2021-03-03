@@ -16,7 +16,7 @@
 
     - name: Copy `nginx.conf` to `sites-available` with name `my_webserv`
       copy:
-        src: nginx.conf
+        src: ../src/nginx.conf
         dest: /etc/nginx/sites-available/my_webserv
       register: nginx_conf_copied
       notify: restart_nginx

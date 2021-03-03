@@ -24,7 +24,7 @@
 
     - name: Create app directory
       file:
-        path: {{ app_install_path }}
+        path: "{{ app_install_path }}"
         state: directory
 
     - name: Copy `flask_emoji.py` and templates pages on the server
@@ -35,9 +35,9 @@
         group: root
         mode: 0744
       with_items:
-        - src: flask_emoji.py
+        - src: ../app/flask_emoji.py
           dest: "{{ app_install_path }}/flask_emoji.py"
-        - src: templates
+        - src: ../app/templates
           dest: "{{ app_install_path }}"
       register: app_files_copied
       notify: restart_my_emoji
@@ -63,7 +63,7 @@
 
     - name: Copy launch script in `/etc/systemd/system/`
       copy:
-        src: my_emoji.service
+        src: ../src/my_emoji.service
         dest: /etc/systemd/system/my_emoji.service
         owner: root
         group: root
