@@ -35,19 +35,20 @@ options=("-m --min-num -t --token")
 # define error messages
 err_syntax="Syntax error. Type './pulls.sh --help' to see more info"
 
-err_arg_miss="Error: argument missing."
+err_arg_miss="Error: Argument missing."
 err_arg_miss="$err_arg_miss Type './pulls.sh --help' to see more info"
 
-err_arg_invalid="Error: invalid argument."
+err_arg_invalid="Error: Invalid argument."
 err_arg_invalid="$err_arg_invalid Type './pulls.sh --help' to see more info"
 
-err_api_rate_limit="API rate limit exceeded. Type './pulls.sh --help'"
+err_api_rate_limit="Error: API rate limit exceeded. Type './pulls.sh --help'"
 err_api_rate_limit="$err_api_rate_limit and note '--token' option"
 
-err_bad_credentials="Bad credentials. Check your personal token."
+err_bad_credentials="Error: Bad credentials. Check your personal token."
 err_bad_credentials="$err_bad_credentials https://docs.github.com/rest"
 
-err_rep_not_found="Repository is not existed"
+err_rep_not_found_start="Error: Repository \""
+err_rep_not_found_end="\" not found."
 
 # difine default conditions
 def_min_num=2 # the minimum number of open PR's to consideration the contributor
@@ -146,12 +147,22 @@ while [[ $cout_of_records -gt 0 ]]; do
       echo $err_bad_credentials
       exit 1
     fi
-    if [[ $(echo "${page_content}" | jq '.[]') =~ "Not Found" ]]; then
-    echo $err_rep_not_found
-    exit
-  fi
+    if [[ $(echo "${page_content}" | jq '.[]') =~ ^"\"Not Found\"" ]]; then
+      echo ${err_rep_not_found_start}${input_url}${err_rep_not_found_end}
+      exit 1
+    fi
+    if [[ "$(echo "${page_content}" | jq '.[]')" =~ \
+      ^"\"API rate limit exceeded".* ]]
+    then
+      echo $err_api_rate_limit
+      exit 1
+    fi
   else
     page_content=$(curl $silent "${request_url}${page_num}")
+    if [[ $(echo "${page_content}" | jq '.[]') =~ ^"\"Not Found\"" ]]; then
+      echo ${err_rep_not_found_start}${input_url}${err_rep_not_found_end}
+      exit 1
+    fi
     if [[ "$(echo "${page_content}" | jq '.[]')" =~ \
       ^"\"API rate limit exceeded".* ]]
     then
