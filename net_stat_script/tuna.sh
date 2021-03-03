@@ -1,5 +1,7 @@
 #! /bin/bash
 
+set -o pipefail
+
 # define "help" message
 help=$'usage: ./tuna.sh [OPTIONS] [PROCESS]
 Show the names of organizations with which the PROCESS has established

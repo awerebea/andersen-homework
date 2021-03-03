@@ -1,5 +1,7 @@
 #! /bin/bash
 
+set -o pipefail
+
 # define "help" message
 help=$'usage: ./volatility.sh [OPTIONS] [DATABASE]
 Download the DATABASE if the file does not exist in the path.

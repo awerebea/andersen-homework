@@ -1,5 +1,7 @@
 #! /bin/bash
 
+set -o pipefail
+
 # define "help" message
 help=$'usage: ./pulls.sh [OPTIONS] REPO_URL
 The script checks for open pull requests for the GitHub repository and displays
