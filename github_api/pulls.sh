@@ -47,6 +47,8 @@ err_api_rate_limit="$err_api_rate_limit and note '--token' option"
 err_bad_credentials="Bad credentials. Check your personal token."
 err_bad_credentials="$err_bad_credentials https://docs.github.com/rest"
 
+err_rep_not_found="Repository is not existed"
+
 # difine default conditions
 def_min_num=2 # the minimum number of open PR's to consideration the contributor
 
@@ -144,6 +146,10 @@ while [[ $cout_of_records -gt 0 ]]; do
       echo $err_bad_credentials
       exit 1
     fi
+    if [[ $(echo "${page_content}" | jq '.[]') =~ "Not Found" ]]; then
+    echo $err_rep_not_found
+    exit
+  fi
   else
     page_content=$(curl $silent "${request_url}${page_num}")
     if [[ "$(echo "${page_content}" | jq '.[]')" =~ \
