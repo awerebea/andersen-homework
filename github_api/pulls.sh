@@ -135,10 +135,10 @@ request_url=$(echo $input_url | \
 request_url="${request_url}/pulls?page="
 
 # generate table with raw response
-cout_of_records=1
+num_of_records=1
 table_raw=()
 page_num=1
-while [[ $cout_of_records -gt 0 ]]; do
+while [[ $num_of_records -gt 0 ]]; do
   if [[ ! -z $token ]]; then
     page_content=$(curl $silent -H "Authorization: token $token" \
       "${request_url}${page_num}")
@@ -170,7 +170,7 @@ while [[ $cout_of_records -gt 0 ]]; do
       exit 1
     fi
   fi
-  cout_of_records=$(echo "$page_content" | jq '. | length' )
+  num_of_records=$(echo "$page_content" | jq '. | length' )
   table_raw+=$page_content
   ((page_num++))
 done
