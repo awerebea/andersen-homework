@@ -38,7 +38,7 @@ Other available STATE identifiers:
                     for example time-wait and syn-recv
   big               opposite to bucket state'
 
-# difine default parameters
+# define default parameters
 # acceptable OPTIONS
 options=("-m --max-count -f --filter")
 
@@ -71,11 +71,11 @@ state=${def_state}
 if [ "$#" -eq 1 ]; then
 # there is only one argument
   if [[ $1 == '-h' || $1 == '--help' ]]; then
-    # the ony argument is 'help'
+    # the only argument is 'help'
     echo "$help"
     exit 0
   else
-    # the ony argument is PROCESS name or ID
+    # the only argument is PROCESS name or ID
     proc=$1
   fi
 elif [ "$#" -gt 1 ]; then
@@ -86,7 +86,7 @@ elif [ "$#" -gt 1 ]; then
   for (( i=0;i<$#;i++)); do
   # loop for each argument
     if [ "$prev_arg_is_key" = true ]; then
-    # previous arg is option identifer
+    # previous arg is option identifier
       case "${args[${ind} - 1]}" in
         -m|--max-count)
           num="${args[${ind}]}"

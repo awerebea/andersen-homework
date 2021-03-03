@@ -1,4 +1,4 @@
-# Ansible playbook for sequential launch of all playbooks in order
+# Ansible playbook for sequential launch of all playbooks in order.
 
 ---
 - import_playbook: _ssh_access.yml

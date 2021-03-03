@@ -26,17 +26,17 @@ Also in this step disable root login and disable password authentication.
 * ***_firewall.yml***
 The second step is setup firewall rules. Remote machine should allow connections only to the ports 22, 80, 443.
 * ***_openssl.yml***
-Install pyOpenSSL and generate selfsigned certificate with private key.
+Install pyOpenSSL and generate self signed certificate with private key.
 * ***_flask.yml***
-Install Flask and and emoji modules, copy to server application files, configure systemd so that the application starts after reboot, launch service. 
+Install Flask and emoji modules, copy to server application files, configure systemd so that the application starts after reboot, launch service.
 * ***_nginx.yml***
-Install nginx webserver, configure it as reverse-proxy to Flask app.
+Install nginx web server, configure it as reverse-proxy to Flask app.
 Setup redirection from unsecure (http:) connection on port 80 to secured (https:) on port 443.
 * ***_deploy_emoji_app.yml***
 Launch all playbooks described above in the same order.
 
 ## Usage
-To launch deploy proccess in the directory with inventory and .yml:
+To launch deploy process in the directory with inventory and .yml:
 ```sh
 $ ansible-playbook _deploy_emoji_app.yml
 ```

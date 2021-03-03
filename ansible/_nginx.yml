@@ -1,15 +1,10 @@
-# Ansible playbook to establish `nginx` webserver and Emojis font.
+# Ansible playbook to establish `nginx` web server and Emojis font.
 
 ---
 - hosts: servers
   become: yes
   tasks:
-    # - name: Ensure `nginx`, `fonts-noto-color-emoji`, `openssl` are installed
-    #   apt:
-    #     name: ['nginx', 'fonts-noto-color-emoji', 'openssl']
-    #     state: present
-
-    - name: Ensure `nginx` is installed
+    - name: Install `nginx`
       apt:
         name: nginx
         state: present
@@ -46,7 +41,7 @@
         dest: /etc/nginx/sites-enabled/my_webserv
         state: link
 
-    - name: Start `nginx` and enable autolaunch after reboot
+    - name: Start `nginx` and enable auto launch after reboot
       service:
         name: nginx
         state: started

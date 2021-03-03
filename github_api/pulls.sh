@@ -50,7 +50,7 @@ err_bad_credentials="$err_bad_credentials https://docs.github.com/rest"
 err_rep_not_found_start="Error: Repository \""
 err_rep_not_found_end="\" not found."
 
-# difine default conditions
+# define default conditions
 def_min_num=2 # the minimum number of open PR's to consideration the contributor
 
 # parse input parameters
@@ -65,7 +65,7 @@ if [ "$#" -eq 0 ]; then
 elif [ "$#" -eq 1 ]; then
 # there is only one argument
   if [[ $1 == '-h' || $1 == '--help' ]]; then
-    # the ony argument is 'help'
+    # the only argument is 'help'
     echo "$help"
     exit 0
   else
@@ -85,7 +85,7 @@ elif [ "$#" -gt 1 ]; then
   for (( i=0;i<$#;i++)); do
   # loop for each argument
     if [ "$prev_arg_is_key" = true ]; then
-    # previous arg is option identifer
+    # previous arg is option identifier
       case "${args[${ind} - 1]}" in
         -m|--min-num)
           if [[ ${args[${ind}]} =~ ^[0-9]+$ ]] && \
@@ -129,7 +129,7 @@ elif [ "$#" -gt 1 ]; then
   done
 fi
 
-# generate request url
+# generate request URL
 request_url=$(echo $input_url | \
   sed 's/https:\/\/github.com/https:\/\/api.github.com\/repos/')
 request_url="${request_url}/pulls?page="

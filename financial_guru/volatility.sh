@@ -26,7 +26,7 @@ options=("-m --month -y --year")
 # define syntax error message
 error="Syntax error. Type './volatility.sh --help' to see more info"
 
-# difine default conditions
+# define default conditions
 def_db_path="quotes.json"   # name of JSON database file
 def_min_year=2015           # start year of statistical calculations
 def_month=03                # select month
@@ -42,13 +42,13 @@ oneline=$def_oneline
 if [ "$#" -eq 1 ]; then
 # there is only one argument
   if [[ $1 == '-h' || $1 == '--help' ]]; then
-    # the ony argument is 'help'
+    # the only argument is 'help'
     echo "$help"
     exit 0
   elif [[ $1 == '-o' || $1 == '--oneline' ]]; then
     oneline=1
   else
-    # the ony argument is db_path
+    # the only argument is db_path
     db_path=$1
   fi
 elif [ "$#" -gt 1 ]; then
@@ -59,7 +59,7 @@ elif [ "$#" -gt 1 ]; then
   for (( i=0;i<$#;i++)); do
   # loop for each argument
     if [ "$prev_arg_is_key" = true ]; then
-    # previous arg is option identifer
+    # previous arg is option identifier
       case "${args[${ind} - 1]}" in
         -m|--month)
           if [[ ${args[${ind}]} =~ ^[0-9]+$ ]] && \
