@@ -34,6 +34,7 @@ def emojis():
         string = ""
         for _ in range(int(count)):
             string += f":{emo_nm}:{word}"
+        string += f":{emo_nm}:"
         return emoji.emojize(string + '\n')
     return render_template("index.html")
 
