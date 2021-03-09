@@ -40,4 +40,7 @@ def emojis():
 
 
 if __name__ == "__main__":
-    app.run(ssl_context=('ssl_cert', 'ssl_key'), debug=True)
+    app.run(ssl_context=(
+            '/etc/ssl/certificates/{{ server_hostname }}_cert.pem',
+            '/etc/ssl/certificates/{{ server_hostname }}_privkey.pem'),
+            debug=True)

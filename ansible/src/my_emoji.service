@@ -4,7 +4,7 @@ After=network.target
 
 [Service]
 Type=simple
-ExecStart=/usr/bin/python3 app_install_path/flask_emoji.py
+ExecStart=/usr/bin/python3 {{ app_install_path }}/flask_emoji.py
 User=root
 
 [Install]

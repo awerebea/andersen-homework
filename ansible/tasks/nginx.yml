@@ -14,26 +14,11 @@
         path: /etc/nginx/sites-enabled/default
         state: absent
 
-    - name: Copy `nginx.conf` to `sites-available` with name `my_webserv`
-      copy:
+    - name: Copy `nginx.conf` template to `sites-available` with name `my_webserv`
+      template:
         src: ../src/nginx.conf
         dest: /etc/nginx/sites-available/my_webserv
-      register: nginx_conf_copied
       notify: restart_nginx
-
-    - name: Replace ssl certificate path in `my_webserv`
-      ansible.builtin.replace:
-        dest: /etc/nginx/sites-available/my_webserv
-        regexp: 'ssl_certificate;'
-        replace: "ssl_certificate /etc/ssl/certificates/{{ server_hostname }}_cert.pem;"
-      when: nginx_conf_copied is defined
-
-    - name: Replace ssl key path in `my_webserv`
-      ansible.builtin.replace:
-        dest: /etc/nginx/sites-available/my_webserv
-        regexp: 'ssl_certificate_key;'
-        replace: "ssl_certificate_key /etc/ssl/certificates/{{ server_hostname }}_privkey.pem;"
-      when: nginx_conf_copied is defined
 
     - name: Create symlink `my_webserv` config to `sites-enabled`
       file:

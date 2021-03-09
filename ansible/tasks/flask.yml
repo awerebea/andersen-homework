@@ -27,42 +27,31 @@
         path: "{{ app_install_path }}"
         state: directory
 
-    - name: Copy `flask_emoji.py` and templates pages on the server
-      copy:
-        src: "{{ item.src }}"
-        dest: "{{ item.dest }}"
+    - name: Copy `flask_emoji.py` template on the server
+      template:
+        src: ../app/flask_emoji.py
+        dest: "{{ app_install_path }}"
         owner: root
         group: root
         mode: 0744
-      with_items:
-        - src: ../app/flask_emoji.py
-          dest: "{{ app_install_path }}/flask_emoji.py"
-        - src: ../app/templates
-          dest: "{{ app_install_path }}"
-      register: app_files_copied
       notify: restart_my_emoji
 
-    - name: Replace ssl certificate path in `flask_emoji.py`
-      ansible.builtin.replace:
-        dest: "{{ app_install_path }}/flask_emoji.py"
-        regexp: 'ssl_cert'
-        replace: "/etc/ssl/certificates/{{ server_hostname }}_cert.pem"
-      when: app_files_copied is defined
-
-    - name: Replace ssl key path in `flask_emoji.py`
-      ansible.builtin.replace:
-        dest: "{{ app_install_path }}/flask_emoji.py"
-        regexp: 'ssl_key'
-        replace: "/etc/ssl/certificates/{{ server_hostname }}_privkey.pem"
-      when: app_files_copied is defined
+    - name: Copy template pages on the server
+      copy:
+        src: ../app/templates
+        dest: "{{ app_install_path }}"
+        owner: root
+        group: root
+        mode: 0744
+      notify: restart_my_emoji
 
     - name: Check if launch script exist in `/etc/systemd/system/`
       stat:
         path: "/etc/systemd/system/my_emoji.service"
       register: launch_script_exists_check
 
-    - name: Copy launch script in `/etc/systemd/system/`
-      copy:
+    - name: Copy launch script template in `/etc/systemd/system/`
+      template:
         src: ../src/my_emoji.service
         dest: /etc/systemd/system/my_emoji.service
         owner: root
@@ -71,13 +60,6 @@
       when: launch_script_exists_check is defined and
             launch_script_exists_check.stat.exists == false
       register: launch_script_created
-
-    - name: Replace app install path in launch script
-      ansible.builtin.replace:
-        dest: "/etc/systemd/system/my_emoji.service"
-        regexp: 'app_install_path'
-        replace: "{{ app_install_path }}"
-      when: launch_script_created is defined
 
     - name: Start app and enable auto launch after reboot
       service:
