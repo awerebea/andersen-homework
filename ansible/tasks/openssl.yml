@@ -13,7 +13,8 @@
 
   tasks:
     - name: Include vars
-      include_vars: ../group_vars/all
+      include_vars:
+        dir: ../group_vars
 
     - name: Install `pip`, `virtualenv`, `setuptools`
       apt:

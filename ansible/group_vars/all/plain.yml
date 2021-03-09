@@ -1,0 +1,23 @@
+# Playbook variables
+
+---
+
+# used for initial access to a remote machine with root access using login
+ansible_password:               "{{root_password}}"
+
+ansible_sudo_pass:              "{{remote_machine_password}}"
+
+# used to access the remote machine using the ssh key
+ansible_ssh_private_key_file:   ~/.ssh/ansible_rsa
+
+# uset to create a new user on a remote machine with ssh access
+remote_machine_username:        admin
+
+# force to use Ansible Python 3 instead of Python 2
+ansible_python_interpreter:     /usr/bin/python3
+
+# used to generate SSH key pair on the localhost
+ssh_key_filename:               ansible_rsa
+
+# used to generate OpenSSL certificate on a remote machine
+server_hostname:                sample.hostname.com
