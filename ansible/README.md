@@ -42,6 +42,12 @@ To launch deploy process in the directory with inventory and .yml run:
 $ ansible-playbook --vault-password-file vault_pass deploy_emoji_app.yml
 ```
 
+To print debug messages while the playbook is running, define the variable `print_debug`.
+<br/>Variables can be defined by passing variables on the command line using the `--extra-vars` (or `-e`) argument when starting the playbook:
+```sh
+$ ansible-playbook --vault-password-file vault_pass -e "debug_mode=true" deploy_emoji_app.yml
+```
+
 **NOTE:** The vault password file (like all other sensitive data files) **should not** be added to source control! The `vault_pass` file was only added because this is a training repository.
 <br/>Encrypted passwords (including the *root* user for initial access) are stored in `group_vars/all`.
 <br/>More details here: [https://docs.ansible.com/ansible/2.8/user_guide/playbooks_vault.html](https://docs.ansible.com/ansible/2.8/user_guide/playbooks_vault.html)<br/>
@@ -53,13 +59,13 @@ or this:
 ```sh
 $ curl -XPOST -d'{"word":"elephant", "count": 3}' http://192.168.1.246/
 ```
-<br/>![output_sample](https://user-images.githubusercontent.com/63558838/109478943-e91d0200-7a8a-11eb-9447-42538f578e95.png)<br/>
+![output_sample](https://user-images.githubusercontent.com/63558838/110555806-4d585980-814e-11eb-951a-e8fed1b8ddeb.png)<br/>
 **NOTE:** The `--insecure` flag added to allow `curl` connect to the server using an *untrusted* selfsigned certificate when connected via https.
 <br/>More details here: [https://curl.se/docs/sslcerts.html](https://curl.se/docs/sslcerts.html)
 ## GET method
 To test http `GET` request method, you can enter the IP address of the remote machine in the address bar of your preferred browser.
 After accepting the risks of using an untrusted certificate, the index page is displayed.
-<br/>![index](https://user-images.githubusercontent.com/63558838/109476239-b58ca880-7a87-11eb-86ce-217dd7fa1f68.png)<br/>
+<br/>![index](https://user-images.githubusercontent.com/63558838/110555805-4cbfc300-814e-11eb-80d0-3939de095b85.png)<br/>
 By adding the name of an emoji to the address, you can see its preview.
 <br/>![thumbs_up](https://user-images.githubusercontent.com/63558838/109476248-b7566c00-7a87-11eb-8627-334547434e3d.png)
 <br/>![cat](https://user-images.githubusercontent.com/63558838/109476242-b6bdd580-7a87-11eb-855d-3f7c82f72549.png)
