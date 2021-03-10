@@ -52,11 +52,6 @@
         chain: INPUT
         jump: DROP
 
-    # - name: Remove `iptables-persistent` if present
-    #   apt:
-    #     name: iptables-persistent
-    #     state: absent
-
     - name: Install `iptables-persistent` to save Firewall rules and restore it after reboot
       apt:
         name: iptables-persistent

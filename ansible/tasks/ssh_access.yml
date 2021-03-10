@@ -53,8 +53,9 @@
         path: "~/.ssh"
       register: ssh_directory_exists_check
 
-    # - debug:
-    #     var: ssh_directory_exists_check
+    - debug:
+        var: ssh_directory_exists_check
+      when: debug_mode is defined
 
     - name: Check needed OS tools exist
       shell: which sshpass ssh-keygen ssh-copy-id
@@ -75,8 +76,9 @@
       register: ssh_directory_creation
       when: ssh_directory_exists_check is defined and ssh_directory_exists_check.stat.exists == false
 
-    # - debug:
-    #     var: ssh_directory_creation
+    - debug:
+        var: ssh_directory_creation
+      when: debug_mode is defined
 
     - name: Check .ssh key file exists
       stat:
@@ -86,8 +88,9 @@
         - "{{ssh_key_filename}}"
         - "{{ssh_key_filename}}.pub"
 
-    # - debug:
-    #     var: ssh_key_file_exists_check.results[1].stat.exists
+    - debug:
+        var: ssh_key_file_exists_check.results[1].stat.exists
+      when: debug_mode is defined
 
     - name: Generate ssh key on local machine
       shell: "ssh-keygen -t rsa -f ~/.ssh/{{ssh_key_filename}} -P \"\""
@@ -98,16 +101,18 @@
         (ssh_key_file_exists_check.results[0].stat.exists == false or
         ssh_key_file_exists_check.results[1].stat.exists == false)
 
-    # - debug:
-    #     var: ssh_key_creation
+    - debug:
+        var: ssh_key_creation
+      when: debug_mode is defined
 
     - name: Check .ssh/config file exists
       stat:
         path: "~/.ssh/config"
       register: ssh_config_file_exists_check
 
-    # - debug:
-    #     var: ssh_config_file_exists_check
+    - debug:
+        var: ssh_config_file_exists_check
+      when: debug_mode is defined
 
     - name: Create the ~/.ssh/config file
       file:
@@ -125,8 +130,9 @@
         backup: yes
       register: ssh_config_file_key_addition
 
-    # - debug:
-    #     var: ssh_config_file_key_addition
+    - debug:
+        var: ssh_config_file_key_addition
+      when: debug_mode is defined
 
     - name: Distribute the ssh key to the remote hosts
       shell: "sshpass -p \"{{remote_machine_password}}\" ssh-copy-id -o StrictHostKeyChecking=no -i ~/.ssh/{{ssh_key_filename}}.pub -p {{ hostvars[item].ansible_port }} \"{{remote_machine_username}}@{{ hostvars[item].ansible_host }}\""
@@ -137,8 +143,9 @@
       ignore_errors: yes
       changed_when: false
 
-    # - debug:
-    #     var: ssh_copy_id_execution
+    - debug:
+        var: ssh_copy_id_execution
+      when: debug_mode is defined
 
 - hosts: ssh_setup_group
   gather_facts: false
