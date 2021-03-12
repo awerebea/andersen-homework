@@ -1,4 +1,4 @@
-FROM python:3.7-alpine
+FROM alpine:3.7
 
 # specifying ports for listening
 EXPOSE 80 443
@@ -13,7 +13,16 @@ COPY src/nginx.conf \
 RUN apk add --update --no-cache \
 	nginx \
 	openssl \
-&&	pip install flask emoji
+	python3 \
+	py3-flask \
+&&	wget -c https://files.pythonhosted.org/packages/d6/56/\
+484163d2f941f8c96de24fecf4885e3101913a2f4b31a1d50b4eb8eb244a/\
+emoji-1.2.0.tar.gz \
+&&	tar -xvf emoji-1.2.0.tar.gz \
+&&	cd emoji-1.2.0 \
+&&	find . -mtime +10950 -print -exec touch {} \; \
+&&	python3 setup.py install \
+&&	rm -rf /emoji-1.2.0
 
 # generate ssl certificate and key
 RUN	mkdir -p	/etc/ssl/certificates \
