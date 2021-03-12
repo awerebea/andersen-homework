@@ -1,4 +1,4 @@
-FROM debian:buster
+FROM debian:buster-slim
 
 # specifying ports for listening
 EXPOSE 80 443
@@ -12,12 +12,14 @@ COPY src/nginx.conf \
 # install requiered components
 RUN apt-get update \
 &&	apt-get install -y \
-	git \
 	nginx \
 	openssl \
 	python3 \
 	python3-flask \
-	python3-setuptools
+&&	echo "deb http://ftp.de.debian.org/debian sid main" >> /etc/apt/sources.list \
+&&	apt-get update \
+&&	apt-get install -y \
+	python3-emoji
 
 # generate ssl certificate and key
 RUN	mkdir -p /etc/ssl/certificates \
@@ -37,11 +39,6 @@ RUN	mv /nginx.conf /etc/nginx/sites-available/my_webserv \
 &&	mv flask_emoji.py /emojis_loopback/ \
 &&	ln -s /etc/nginx/sites-available/my_webserv /etc/nginx/sites-enabled/ \
 &&	rm -f /etc/nginx/sites-enabled/default
-
-# clone the sources of the 'emoji' module and install it
-RUN	git clone https://github.com/carpedm20/emoji.git \
-&&	cd emoji \
-&&	python3 setup.py install
 
 # launch server
 CMD	service nginx start \
