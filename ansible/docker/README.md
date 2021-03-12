@@ -35,8 +35,8 @@ $ docker build -t emojis_loopback:final -f docker/Dockerfile .
 # run image in container
 $ docker run --name emojis_loopback -p 8080:80 -p 4430:443 -it -d emojis_loopback:final
 
-# run a command in running container (for exemple, start bash interactively):
-$ docker exec -it emojis_loopback bash
+# run a command in running container (for exemple, start sh interactively):
+$ docker exec -it emojis_loopback sh
 
 # stop container:
 $ docker stop emojis_loopback
