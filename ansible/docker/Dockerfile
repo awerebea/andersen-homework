@@ -1,4 +1,4 @@
-FROM debian:buster-slim
+FROM python:3.7-alpine
 
 # specifying ports for listening
 EXPOSE 80 443
@@ -10,19 +10,15 @@ COPY src/nginx.conf \
 	app/templates/preview.html /
 
 # install requiered components
-RUN apt-get update \
-&&	apt-get install -y \
+RUN apk add --update --no-cache \
 	nginx \
 	openssl \
-	python3 \
-	python3-flask \
-&&	echo "deb http://ftp.de.debian.org/debian sid main" >> /etc/apt/sources.list \
-&&	apt-get update \
-&&	apt-get install -y \
-	python3-emoji
+&&	pip install flask emoji
 
 # generate ssl certificate and key
-RUN	mkdir -p /etc/ssl/certificates \
+RUN	mkdir -p	/etc/ssl/certificates \
+				/etc/supervisor.d \
+				/run/nginx \
 &&	openssl req -newkey rsa:2048 -x509 -sha256 -days 30 -nodes \
 	-out /etc/ssl/certificates/dockerhost_cert.pem \
 	-keyout /etc/ssl/certificates/dockerhost_privkey.pem \
@@ -33,13 +29,12 @@ RUN	sed -i 's/{{\ server_hostname\ }}/dockerhost/' flask_emoji.py \
 &&	sed -i 's/{{\ server_hostname\ }}/dockerhost/' nginx.conf
 
 # move src files to correct locations
-RUN	mv /nginx.conf /etc/nginx/sites-available/my_webserv \
+RUN	rm /etc/nginx/conf.d/default.conf \
+&&	mv /nginx.conf /etc/nginx/conf.d/ \
 &&	mkdir -p /emojis_loopback/templates \
 &&	mv /index.html /preview.html /emojis_loopback/templates/ \
-&&	mv flask_emoji.py /emojis_loopback/ \
-&&	ln -s /etc/nginx/sites-available/my_webserv /etc/nginx/sites-enabled/ \
-&&	rm -f /etc/nginx/sites-enabled/default
+&&	mv flask_emoji.py /emojis_loopback/
 
 # launch server
-CMD	service nginx start \
-&&	python3 /emojis_loopback/flask_emoji.py
+CMD	python3 /emojis_loopback/flask_emoji.py & \
+	nginx -g 'daemon off;'
