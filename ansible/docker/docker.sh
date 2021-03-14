@@ -1,15 +1,15 @@
 #! /bin/bash
 
-help_message=$'usage: ./start.sh [COMMAND]
+help_message=$'usage: ./docker.sh [COMMAND]
 This script was created to make it easier to manage Docker when you want to build,
 run, start/stop, or remove a container/image
 that is running the \'emojis_loopback\' web app.
 Examples:
-./start.sh
-./start.sh stop
-./start.sh start
-./start.sh rm
-./start.sh rmi
+./docker.sh
+./docker.sh stop
+./docker.sh start
+./docker.sh rm
+./docker.sh rmi
 
 By default, if the script is run without any command,
 it initializes the build of the image and then
@@ -26,7 +26,7 @@ COMMANDs:
 
   -h, --help    print this help message'
 
-error_message="Invalid argument. Type './start.sh --help' to see more info"
+error_message="Invalid argument. Type './docker.sh --help' to see more info"
 
 # build image
 docker_build="docker build -t emojis_loopback:final -f docker/Dockerfile ."
