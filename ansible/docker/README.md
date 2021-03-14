@@ -1,11 +1,11 @@
 # Flask app `emojis_loopback` in Docker container
 To try out my flask web app by starting a docker container with it, just run:
 ```sh
-$ ./start.sh
+$ ./docker.sh
 ```
 To find out about all the possibilities of the script, enter:
 ```sh
-$ ./start.sh --help
+$ ./docker.sh --help
 ```
 To manage Docker container manually, from root of this repository (directory with `app`, `src` and `docker` subdirectories) you can use the following commands:
 ```sh
@@ -36,12 +36,12 @@ To test http `GET` request method, you can enter `http://localhost:8080` or `htt
 Using script
 ```sh
 # automatically build an image and run it in a container
-$ ./start.sh
+$ ./docker.sh
 
 # print all possibilities
-$ ./start.sh --help
+$ ./docker.sh --help
 # or
-$ ./start.sh -h
+$ ./docker.sh -h
 ```
 Manual mode
 ```sh
